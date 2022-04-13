@@ -1,0 +1,57 @@
+package day00denemeler;
+
+
+public class TransactionalRegistrationServiceIT {
+    @Inject private RegistrationService service;
+
+    @Deployment
+    public static JavaArchive createArchive() {
+        return ShrinkWrap
+                .create(JavaArchive.class)
+                .addClasses(CustomerJpaRepository.class, PersistenceConfig.class)
+                .addClasses(ConversionService.class, TransactionalRegistrationService.class)
+                .addPackages(true, "org.apache.deltaspike")
+                .addPackages(true, "com.javacodegeeks.rentals.customer.conversion")
+                .addPackages(true, "com.javacodegeeks.rentals.customer.registration.conversion");
+    }
+
+    @Test
+    public void testRegisterNewCustomer() {
+        final RegisterAddress homeAddress = new RegisterAddress ()
+
+
+                .withStreetLine1("2180 = haci")
+                .withPostalCode("j6x3z9")
+                .withCity("Montreal")
+                .withCountry("Canada")
+                .withStateOrProvince("QC");
+
+        final RegisterCustomer registerCustomer = new RegisterCustomer()
+                .withFirstName("Yavuz")
+                .withLastName("Sonmez")
+                .withEmail("yavuzzsonmezz@gmail.com")
+                .withHomeAddress(homeAddress);
+
+        final UUID uuid = UUID.randomUUID();
+        final Customer customer = service.register(uuid, registerCustomer);
+
+        assertThat(customer).isNotNull()
+                .satisfies(c -> {
+                    assertThat(c.getUuid()).isEqualTo(uuid);
+                    assertThat(c.getFirstName()).isEqualTo("Yavuz");
+                    assertThat(c.getLastName()).isEqualTo("Sonmez");
+                    assertThat(c.getEmail()).isEqualTo("avuzzsonmezz@gmail.com");
+                    assertThat(c.getBillingAddress()).isNull();
+                    assertThat(customer.getHomeAddress()).isNotNull()
+                            .satisfies(a -> {
+                                assertThat(a.getUuid()).isNotNull();
+                                assertThat(a.getStreetLine1()).isEqualTo("7393 Plymouth Lane");
+                                assertThat(a.getStreetLine2()).isNull();
+                                assertThat(a.getCity()).isEqualTo("Springfield");
+                                assertThat(a.getPostalCode()).isEqualTo("19064");
+                                assertThat(a.getStateOrProvince()).isEqualTo("PA");
+                                assertThat(a.getCountry()).isEqualTo("United States of America");
+                            });
+                });
+    }
+}
